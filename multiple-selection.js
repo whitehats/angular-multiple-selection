@@ -49,11 +49,13 @@ angular.module('multipleSelection', [])
                 scope.isSelectable = true;
                 scope.isSelecting = false;
                 scope.isSelected = false;
+                scope.onSelect(iAttrs.id, false);
 
                 element.on('mousedown', function(event) {
                     if (element.scope().isSelected) {
                         if (event.ctrlKey) {
                             element.scope().isSelected = false;
+                            element.scope().onSelect(element.attr('id'), false);
                             element.scope().$apply();
                         }
                     } else {
@@ -64,13 +66,17 @@ angular.module('multipleSelection', [])
                                     if (childs[i].scope().isSelecting === true || childs[i].scope().isSelected === true) {
                                         childs[i].scope().isSelecting = false;
                                         childs[i].scope().isSelected = false;
+                                        childs[i].scope().onSelect(childs[i].attr('id'), false);
                                         childs[i].scope().$apply();
                                     }
                                 }
                             }
                         }
-                        element.scope().isSelected = true;
-                        element.scope().$apply();
+                        if (element.scope().selectOnClick) {
+                            element.scope().isSelected = true;
+                            element.scope().onSelect(element.attr('id'), true);
+                            element.scope().$apply();
+                        }
 
                     }
                     event.stopPropagation();
@@ -198,11 +204,13 @@ angular.module('multipleSelection', [])
                             childs[i].scope().isSelecting = false;
 
                             childs[i].scope().isSelected = event.ctrlKey ? !childs[i].scope().isSelected : true;
+                            childs[i].scope().onSelect(childs[i].attr('id'), event.ctrlKey ? !childs[i].scope().isSelected : true);
                             childs[i].scope().$apply();
                         } else {
                             if (checkElementHitting(transformBox(childs[i].prop('offsetLeft'), childs[i].prop('offsetTop'), childs[i].prop('offsetLeft') + childs[i].prop('offsetWidth'), childs[i].prop('offsetTop') + childs[i].prop('offsetHeight')), transformBox(event.pageX, event.pageY, event.pageX, event.pageY))) {
                                 if (childs[i].scope().isSelected === false) {
                                     childs[i].scope().isSelected = true;
+                                    childs[i].scope().onSelect(childs[i].attr('id'), true);
                                     childs[i].scope().$apply();
                                 }
                             }
@@ -214,6 +222,7 @@ angular.module('multipleSelection', [])
                 }
 
                 element.on('mousedown', function(event) {
+                    if (event.button !== 0) return;
                     // Prevent default dragging of selected content
                     event.preventDefault();
                     if (!event.ctrlKey) {
@@ -223,6 +232,7 @@ angular.module('multipleSelection', [])
                             if (childs[i].scope().isSelecting === true || childs[i].scope().isSelected === true) {
                                 childs[i].scope().isSelecting = false;
                                 childs[i].scope().isSelected = false;
+                                childs[i].scope().onSelect(childs[i].attr('id'), false);
                                 childs[i].scope().$apply();
                             }
                         }
@@ -234,6 +244,8 @@ angular.module('multipleSelection', [])
                     helper = angular
                         .element("<div></div>")
                         .addClass('select-helper');
+
+                    moveSelectionHelper(helper, startX, startY, startX, startY);
 
                     $document.find('body').eq(0).append(helper);
                     // Attach events
