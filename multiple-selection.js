@@ -62,12 +62,13 @@ angular.module('multipleSelection', [])
                         if (!event.ctrlKey) {
                             var childs = getSelectableElements(element.parent());
                             for (var i = 0; i < childs.length; i++) {
-                                if (childs[i].scope().isSelectable) {
-                                    if (childs[i].scope().isSelecting === true || childs[i].scope().isSelected === true) {
-                                        childs[i].scope().isSelecting = false;
-                                        childs[i].scope().isSelected = false;
-                                        childs[i].scope().onSelect(childs[i].attr('id'), false);
-                                        childs[i].scope().$apply();
+                                var childScope = childs[i].scope();
+                                if (childScope.isSelectable) {
+                                    if (childScope.isSelecting === true || childScope.isSelected === true) {
+                                        childScope.isSelecting = false;
+                                        childScope.isSelected = false;
+                                        childScope.onSelect(childs[i].attr('id'), false);
+                                        childScope.$apply();
                                     }
                                 }
                             }
@@ -91,6 +92,16 @@ angular.module('multipleSelection', [])
             link: function(scope, element, iAttrs, controller) {
 
                 scope.isSelectableZone = true;
+
+                var jqElement = $(element);
+
+                var getCoordinates = function(event) {
+                    var offset = jqElement.offset();
+                    return {
+                        x: event.pageX,
+                        y: event.pageY
+                    };
+                }
 
                 var startX = 0,
                     startY = 0;
@@ -167,19 +178,22 @@ angular.module('multipleSelection', [])
                     // Prevent default dragging of selected content
                     event.preventDefault();
                     // Move helper
-                    moveSelectionHelper(helper, startX, startY, event.pageX, event.pageY);
+                    var coords = getCoordinates(event);
+                    moveSelectionHelper(helper, startX, startY, coords.x, coords.y);
                     // Check items is selecting
                     var childs = getSelectableElements(element);
                     for (var i = 0; i < childs.length; i++) {
-                        if (checkElementHitting(transformBox(offset(childs[i][0]).left, offset(childs[i][0]).top, offset(childs[i][0]).left + childs[i].prop('offsetWidth'), offset(childs[i][0]).top + childs[i].prop('offsetHeight')), transformBox(startX, startY, event.pageX, event.pageY))) {
-                            if (childs[i].scope().isSelecting === false) {
-                                childs[i].scope().isSelecting = true;
-                                childs[i].scope().$apply();
+                        var childScope = childs[i].scope(),
+                            off = offset(childs[i][0]);
+                        if (checkElementHitting(transformBox(off.left, off.top, off.left + childs[i].prop('offsetWidth'), off.top + childs[i].prop('offsetHeight')), transformBox(startX, startY, coords.x, coords.y))) {
+                            if (childScope.isSelecting === false) {
+                                childScope.isSelecting = true;
+                                childScope.$apply();
                             }
                         } else {
-                            if (childs[i].scope().isSelecting === true) {
-                                childs[i].scope().isSelecting = false;
-                                childs[i].scope().$apply();
+                            if (childScope.isSelecting === true) {
+                                childScope.isSelecting = false;
+                                childScope.$apply();
                             }
                         }
                     }
@@ -200,18 +214,21 @@ angular.module('multipleSelection', [])
                     var childs = getSelectableElements(element);
 
                     for (var i = 0; i < childs.length; i++) {
-                        if (childs[i].scope().isSelecting === true) {
-                            childs[i].scope().isSelecting = false;
+                        var childScope = childs[i].scope();
+                        if (childScope.isSelecting === true) {
+                            childScope.isSelecting = false;
 
-                            childs[i].scope().isSelected = event.ctrlKey ? !childs[i].scope().isSelected : true;
-                            childs[i].scope().onSelect(childs[i].attr('id'), event.ctrlKey ? !childs[i].scope().isSelected : true);
-                            childs[i].scope().$apply();
+                            childScope.isSelected = event.ctrlKey ? !childScope.isSelected : true;
+                            childScope.onSelect(childs[i].attr('id'), childScope.isSelected);
+                            childScope.$apply();
                         } else {
-                            if (checkElementHitting(transformBox(childs[i].prop('offsetLeft'), childs[i].prop('offsetTop'), childs[i].prop('offsetLeft') + childs[i].prop('offsetWidth'), childs[i].prop('offsetTop') + childs[i].prop('offsetHeight')), transformBox(event.pageX, event.pageY, event.pageX, event.pageY))) {
-                                if (childs[i].scope().isSelected === false) {
-                                    childs[i].scope().isSelected = true;
-                                    childs[i].scope().onSelect(childs[i].attr('id'), true);
-                                    childs[i].scope().$apply();
+                            var coords = getCoordinates(event),
+                                off = offset(childs[i][0]);
+                            if (checkElementHitting(transformBox(off.left, off.top, off.left + childs[i].prop('offsetWidth'), off.top + childs[i].prop('offsetHeight')), transformBox(coords.x, coords.y, coords.x, coords.y))) {
+                                if (childScope.isSelected === false) {
+                                    childScope.isSelected = true;
+                                    childScope.onSelect(childs[i].attr('id'), true);
+                                    childScope.$apply();
                                 }
                             }
                         }
@@ -229,23 +246,26 @@ angular.module('multipleSelection', [])
                         // Skip all selected or selecting items
                         var childs = getSelectableElements(element);
                         for (var i = 0; i < childs.length; i++) {
-                            if (childs[i].scope().isSelecting === true || childs[i].scope().isSelected === true) {
-                                childs[i].scope().isSelecting = false;
-                                childs[i].scope().isSelected = false;
-                                childs[i].scope().onSelect(childs[i].attr('id'), false);
-                                childs[i].scope().$apply();
+                            var childScope = childs[i].scope();
+                            if (childScope.isSelecting === true || childScope.isSelected === true) {
+                                childScope.isSelecting = false;
+                                childScope.isSelected = false;
+                                childScope.onSelect(childs[i].attr('id'), false);
+                                childScope.$apply();
                             }
                         }
                     }
                     // Update start coordinates
-                    startX = event.pageX;
-                    startY = event.pageY;
+                    var coords = getCoordinates(event);
+                    startX = coords.x;
+                    startY = coords.y;
+
                     // Create helper
                     helper = angular
                         .element("<div></div>")
                         .addClass('select-helper');
 
-                    moveSelectionHelper(helper, startX, startY, startX, startY);
+                    moveSelectionHelper(helper, 0, 0, 0, 0);
 
                     $document.find('body').eq(0).append(helper);
                     // Attach events
@@ -255,3 +275,4 @@ angular.module('multipleSelection', [])
             }
         };
     }]);
+
