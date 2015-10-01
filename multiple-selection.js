@@ -239,6 +239,11 @@ angular.module('multipleSelection', [])
                 }
 
                 element.on('mousedown', function(event) {
+                    if (angular.isDefined(iAttrs.skipClass) &&
+                        angular.isString(event.target.className) &&
+                        event.target.className.indexOf(iAttrs.skipClass) > -1) {
+                            return;
+                    }
                     if (event.button !== 0) return;
                     // Prevent default dragging of selected content
                     event.preventDefault();
